@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Fines - UniLibPlus{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>💰 Fines</h1>
+    <p>View and manage patron fines</p>
+</div>
+
+{% if fines_list %}
+<div class="card">
+    <div class="card-header">
+        <h2>Unpaid Fines</h2>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Patron ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Total Fines</th>
+                    <th>Unpaid Fines</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fine in fines_list %}
+                <tr>
+                    <td>{{ fine.patron_id }}</td>
+                    <td><strong>{{ fine.first_name }} {{ fine.last_name }}</strong></td>
+                    <td>{{ fine.email or 'N/A' }}</td>
+                    <td>${{ "%.2f"|format(fine.total_fines) }}</td>
+                    <td>
+                        <span class="badge badge-danger">${{ "%.2f"|format(fine.unpaid_fines) }}</span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('patron_detail', patron_id=fine.patron_id) }}" class="btn btn-sm btn-primary">View Details</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <p>✅ Great! No unpaid fines at the moment</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

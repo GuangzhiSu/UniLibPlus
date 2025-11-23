@@ -1,32 +1,68 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>UniLibPlus – Books</title>
-</head>
-<body>
-    <h1>Books</h1>
-    <table border="1" cellpadding="6">
-        <thead>
-            <tr>
-                <th>ISBN</th>
-                <th>Title</th>
-                <th>Year</th>
-                <th>Publisher</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for b in books %}
-            <tr>
-                <td>{{ b.isbn }}</td>
-                <td>{{ b.title }}</td>
-                <td>{{ b.pub_year }}</td>
-                <td>{{ b.publisher_name or '' }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+{% extends "base.html" %}
 
-    <p><a href="{{ url_for('index') }}">Back to patrons</a></p>
-</body>
-</html>
+{% block title %}Books - UniLibPlus{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📚 Books Catalog</h1>
+    <p>Browse and search library collection</p>
+</div>
+
+<div class="card">
+    <div class="search-bar">
+        <form method="GET" action="{{ url_for('books') }}" style="display: flex; gap: 0.5rem; width: 100%;">
+            <input type="text" name="search" class="form-control" placeholder="Search by title or ISBN..." value="{{ search }}">
+            <select name="subject" class="form-control" style="width: 200px;">
+                <option value="">All Subjects</option>
+                {% for subj in subjects %}
+                <option value="{{ subj.subject_id }}" {% if selected_subject == subj.subject_id|string %}selected{% endif %}>
+                    {{ subj.name }}
+                </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Search</button>
+            {% if search or selected_subject %}
+            <a href="{{ url_for('books') }}" class="btn btn-secondary">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    {% if books %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ISBN</th>
+                    <th>Title</th>
+                    <th>Year</th>
+                    <th>Publisher</th>
+                    <th>Authors</th>
+                    <th>Subjects</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in books %}
+                <tr>
+                    <td>{{ book.isbn }}</td>
+                    <td><strong>{{ book.title }}</strong></td>
+                    <td>{{ book.pub_year or 'N/A' }}</td>
+                    <td>{{ book.publisher_name or 'N/A' }}</td>
+                    <td>{{ book.authors or 'N/A' }}</td>
+                    <td>{{ book.subjects or 'N/A' }}</td>
+                    <td>
+                        <a href="{{ url_for('book_detail', isbn=book.isbn) }}" class="btn btn-sm btn-primary">Details</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>📖 No matching books found</p>
+        <p>Please try different search criteria</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

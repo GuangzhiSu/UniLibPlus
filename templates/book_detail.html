@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} - UniLibPlus{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ book.title }}</h1>
+    <p>Book Details</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Basic Information</h2>
+    </div>
+    <table>
+        <tr>
+            <th style="width: 150px;">ISBN</th>
+            <td>{{ book.isbn }}</td>
+        </tr>
+        <tr>
+            <th>Title</th>
+            <td><strong>{{ book.title }}</strong></td>
+        </tr>
+        <tr>
+            <th>Publication Year</th>
+            <td>{{ book.pub_year or 'N/A' }}</td>
+        </tr>
+        <tr>
+            <th>Publisher</th>
+            <td>{{ book.publisher_name or 'N/A' }}</td>
+        </tr>
+        <tr>
+            <th>Authors</th>
+            <td>{{ book.authors or 'N/A' }}</td>
+        </tr>
+        <tr>
+            <th>Subjects</th>
+            <td>
+                {% if book.subjects %}
+                    {% for subject in book.subjects.split(', ') %}
+                        <span class="badge badge-info">{{ subject }}</span>
+                    {% endfor %}
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Copy Locations</h2>
+    </div>
+    {% if copies %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Copy ID</th>
+                    <th>Barcode</th>
+                    <th>Branch</th>
+                    <th>Term</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for copy in copies %}
+                <tr>
+                    <td>{{ copy.copy_id }}</td>
+                    <td>{{ copy.barcode }}</td>
+                    <td>{{ copy.branch_name or 'N/A' }}</td>
+                    <td>{{ copy.checkin_term or 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>📦 No copy records found</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="mt-2">
+    <a href="{{ url_for('books') }}" class="btn btn-secondary">Back to Books</a>
+</div>
+{% endblock %}
+

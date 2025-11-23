@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}UniLibPlus{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('dashboard') }}" class="nav-brand">📚 UniLibPlus</a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}" {% if request.endpoint == 'dashboard' %}class="active"{% endif %}>Dashboard</a></li>
+                <li><a href="{{ url_for('books') }}" {% if request.endpoint == 'books' %}class="active"{% endif %}>Books</a></li>
+                <li><a href="{{ url_for('patrons') }}" {% if request.endpoint == 'patrons' %}class="active"{% endif %}>Patrons</a></li>
+                <li><a href="{{ url_for('loans') }}" {% if request.endpoint == 'loans' %}class="active"{% endif %}>Loans</a></li>
+                <li><a href="{{ url_for('fines') }}" {% if request.endpoint == 'fines' %}class="active"{% endif %}>Fines</a></li>
+                <li><a href="{{ url_for('statistics') }}" {% if request.endpoint == 'statistics' %}class="active"{% endif %}>Statistics</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

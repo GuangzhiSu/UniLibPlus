@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Loans - UniLibPlus{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📖 Loans</h1>
+    <p>View and manage book loans</p>
+</div>
+
+<div class="card">
+    <div class="filter-group">
+        <a href="{{ url_for('loans', filter='all') }}" 
+           class="btn {% if filter_type == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">
+            All
+        </a>
+        <a href="{{ url_for('loans', filter='current') }}" 
+           class="btn {% if filter_type == 'current' %}btn-primary{% else %}btn-secondary{% endif %}">
+            Current Loans
+        </a>
+        <a href="{{ url_for('loans', filter='overdue') }}" 
+           class="btn {% if filter_type == 'overdue' %}btn-primary{% else %}btn-secondary{% endif %}">
+            Overdue Loans
+        </a>
+    </div>
+
+    {% if loans %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Loan ID</th>
+                    <th>Patron</th>
+                    <th>Barcode</th>
+                    <th>ISBN</th>
+                    <th>Title</th>
+                    <th>Loan Date</th>
+                    <th>Due Date</th>
+                    {% if filter_type == 'all' %}
+                    <th>Return Date</th>
+                    <th>Status</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for loan in loans %}
+                <tr>
+                    <td>{{ loan.loan_id }}</td>
+                    <td>
+                        {% if loan.patron_name %}
+                            <a href="{{ url_for('patron_detail', patron_id=loan.patron_id) }}">
+                                {{ loan.patron_name }}
+                            </a>
+                        {% else %}
+                            ID: {{ loan.patron_id }}
+                        {% endif %}
+                    </td>
+                    <td>{{ loan.barcode }}</td>
+                    <td>{{ loan.isbn }}</td>
+                    <td><strong>{{ loan.title }}</strong></td>
+                    <td>{{ loan.loan_ts | dateformat }}</td>
+                    <td>
+                        {% if loan.due_ts %}
+                            {{ loan.due_ts | dateformat }}
+                            {% if filter_type == 'overdue' %}
+                                <span class="badge badge-danger">Overdue</span>
+                            {% endif %}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    {% if filter_type == 'all' %}
+                    <td>{{ loan.return_ts | dateformat if loan.return_ts else '-' }}</td>
+                    <td>
+                        {% if loan.loan_status == 'Returned' %}
+                            <span class="badge badge-success">Returned</span>
+                        {% elif loan.loan_status == 'Overdue' %}
+                            <span class="badge badge-danger">Overdue</span>
+                        {% elif loan.loan_status == 'On loan' %}
+                            <span class="badge badge-warning">On Loan</span>
+                        {% else %}
+                            <span class="badge badge-info">{{ loan.loan_status or 'N/A' }}</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>📚 No loan records found</p>
+        {% if filter_type == 'overdue' %}
+            <p>Great! No overdue loans at the moment</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - UniLibPlus{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Dashboard</h1>
+    <p>Library Management System Overview</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total_books }}</div>
+        <div class="stat-label">Total Books</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total_patrons }}</div>
+        <div class="stat-label">Total Patrons</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.current_loans }}</div>
+        <div class="stat-label">Current Loans</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.overdue_loans }}</div>
+        <div class="stat-label">Overdue Loans</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">${{ "%.2f"|format(stats.total_fines) }}</div>
+        <div class="stat-label">Total Fines</div>
+    </div>
+</div>
+
+{% if stats.overdue_loans > 0 %}
+<div class="card">
+    <div class="card-header">
+        <h2>⚠️ Overdue Loans Alert</h2>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Loan ID</th>
+                    <th>Patron</th>
+                    <th>Book</th>
+                    <th>Due Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for loan in stats.recent_overdue %}
+                <tr>
+                    <td>{{ loan.loan_id }}</td>
+                    <td>{{ loan.patron_name }}</td>
+                    <td>{{ loan.title }}</td>
+                    <td>{{ loan.due_ts | dateformat }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-2">
+        <a href="{{ url_for('loans', filter='overdue') }}" class="btn btn-warning">View All Overdue Loans</a>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header">
+        <h2>Quick Navigation</h2>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        <a href="{{ url_for('books') }}" class="btn btn-primary">Browse Books</a>
+        <a href="{{ url_for('patrons') }}" class="btn btn-primary">Manage Patrons</a>
+        <a href="{{ url_for('loans') }}" class="btn btn-primary">Loan Management</a>
+        <a href="{{ url_for('fines') }}" class="btn btn-warning">Fine Management</a>
+        <a href="{{ url_for('statistics') }}" class="btn btn-secondary">Statistics</a>
+    </div>
+</div>
+{% endblock %}
+

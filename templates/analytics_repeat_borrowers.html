@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Repeat Borrowers - Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Repeat Borrowers</h1>
+    <p>Self-Join Query: Patrons who borrowed the same book multiple times</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Patrons with Multiple Loans of Same Book</h2>
+    </div>
+    {% if borrowers %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Patron ID</th>
+                    <th>Name</th>
+                    <th>ISBN</th>
+                    <th>Title</th>
+                    <th>Times Borrowed</th>
+                    <th>First Loan</th>
+                    <th>Last Loan</th>
+                    <th>Days Between</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in borrowers %}
+                <tr>
+                    <td>{{ b.patron_id }}</td>
+                    <td><strong>{{ b.patron_name }}</strong></td>
+                    <td>{{ b.isbn }}</td>
+                    <td>{{ b.title }}</td>
+                    <td><span class="badge badge-info">{{ b.times_borrowed }}</span></td>
+                    <td>{{ b.first_loan | dateformat }}</td>
+                    <td>{{ b.last_loan | dateformat }}</td>
+                    <td>{{ b.days_between_first_last }} days</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No repeat borrowers found</p>
+    </div>
+    {% endif %}
+    <div class="mt-2">
+        <a href="{{ url_for('analytics') }}" class="btn btn-secondary">Back to Analytics</a>
+    </div>
+</div>
+{% endblock %}
+

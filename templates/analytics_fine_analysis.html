@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Fine Analysis - Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Fine Analysis by Reason</h1>
+    <p>Conditional Aggregation: Statistics on fines by reason type</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Fine Statistics by Reason</h2>
+    </div>
+    {% if fine_stats %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Reason Code</th>
+                    <th>Description</th>
+                    <th>Total Fines</th>
+                    <th>Total Amount</th>
+                    <th>Avg Amount</th>
+                    <th>Min</th>
+                    <th>Max</th>
+                    <th>Paid Amount</th>
+                    <th>Unpaid Amount</th>
+                    <th>Paid Count</th>
+                    <th>Unpaid Count</th>
+                    <th>Payment Rate %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in fine_stats %}
+                <tr>
+                    <td><strong>{{ f.fine_reason_code }}</strong></td>
+                    <td>{{ f.fine_reason or 'N/A' }}</td>
+                    <td>{{ f.total_fines or 0 }}</td>
+                    <td>${{ "%.2f"|format(f.total_amount or 0) }}</td>
+                    <td>${{ "%.2f"|format(f.avg_amount or 0) }}</td>
+                    <td>${{ "%.2f"|format(f.min_amount or 0) }}</td>
+                    <td>${{ "%.2f"|format(f.max_amount or 0) }}</td>
+                    <td>${{ "%.2f"|format(f.paid_amount or 0) }}</td>
+                    <td>
+                        {% if f.unpaid_amount and f.unpaid_amount > 0 %}
+                            <span class="badge badge-danger">${{ "%.2f"|format(f.unpaid_amount) }}</span>
+                        {% else %}
+                            $0.00
+                        {% endif %}
+                    </td>
+                    <td>{{ f.paid_count or 0 }}</td>
+                    <td>{{ f.unpaid_count or 0 }}</td>
+                    <td>
+                        <span class="badge {% if f.payment_rate_pct and f.payment_rate_pct >= 80 %}badge-success{% elif f.payment_rate_pct and f.payment_rate_pct >= 50 %}badge-warning{% else %}badge-danger{% endif %}">
+                            {{ "%.1f"|format(f.payment_rate_pct or 0) }}%
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No fine data available</p>
+    </div>
+    {% endif %}
+    <div class="mt-2">
+        <a href="{{ url_for('analytics') }}" class="btn btn-secondary">Back to Analytics</a>
+    </div>
+</div>
+{% endblock %}
+

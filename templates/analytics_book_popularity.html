@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Book Popularity - Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Book Popularity Analysis</h1>
+    <p>Complex CASE Statement: Categorizing books by loan frequency</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Books by Popularity Category</h2>
+    </div>
+    {% if categories %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Number of Books</th>
+                    <th>Avg Loans/Book</th>
+                    <th>Min Loans</th>
+                    <th>Max Loans</th>
+                    <th>Total Loans</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cat in categories %}
+                <tr>
+                    <td><strong>{{ cat.popularity_category }}</strong></td>
+                    <td>{{ cat.num_books }}</td>
+                    <td>{{ "%.2f"|format(cat.avg_loans_per_book) }}</td>
+                    <td>{{ cat.min_loans }}</td>
+                    <td>{{ cat.max_loans }}</td>
+                    <td><span class="badge badge-info">{{ cat.total_loans }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No data available</p>
+    </div>
+    {% endif %}
+    <div class="mt-2">
+        <a href="{{ url_for('analytics') }}" class="btn btn-secondary">Back to Analytics</a>
+    </div>
+</div>
+{% endblock %}
+

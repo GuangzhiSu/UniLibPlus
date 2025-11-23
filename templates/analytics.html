@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - UniLibPlus{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Advanced Analytics</h1>
+    <p>Complex queries and data analysis</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Available Analytics</h2>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+        <div class="card" style="margin: 0;">
+            <h3>Window Functions</h3>
+            <p>Rank patrons by fines within each patron type using ROW_NUMBER, RANK, and DENSE_RANK</p>
+            <a href="{{ url_for('patron_ranking') }}" class="btn btn-primary">View Patron Rankings</a>
+        </div>
+
+        <div class="card" style="margin: 0;">
+            <h3>CTE - Multi-Branch Patrons</h3>
+            <p>Find patrons who have borrowed books from multiple library branches using Common Table Expressions</p>
+            <a href="{{ url_for('multi_branch_patrons') }}" class="btn btn-primary">View Multi-Branch Patrons</a>
+        </div>
+
+        <div class="card" style="margin: 0;">
+            <h3>Book Popularity Categories</h3>
+            <p>Categorize books by popularity using complex CASE statements and aggregations</p>
+            <a href="{{ url_for('book_popularity') }}" class="btn btn-primary">View Popularity Analysis</a>
+        </div>
+
+        <div class="card" style="margin: 0;">
+            <h3>EXISTS Query</h3>
+            <p>Find patrons who have active reservations but have never borrowed any books</p>
+            <a href="{{ url_for('reservations_no_loans') }}" class="btn btn-primary">View Results</a>
+        </div>
+
+        <div class="card" style="margin: 0;">
+            <h3>Self-Join - Repeat Borrowers</h3>
+            <p>Identify patrons who have borrowed the same book multiple times</p>
+            <a href="{{ url_for('repeat_borrowers') }}" class="btn btn-primary">View Repeat Borrowers</a>
+        </div>
+
+        <div class="card" style="margin: 0;">
+            <h3>Fine Analysis by Reason</h3>
+            <p>Detailed statistics on fines categorized by reason type with payment rates</p>
+            <a href="{{ url_for('fine_analysis') }}" class="btn btn-primary">View Fine Analysis</a>
+        </div>
+
+        <div class="card" style="margin: 0;">
+            <h3>Subject Patterns</h3>
+            <p>Analyze patron borrowing patterns by subject area using CTEs</p>
+            <a href="{{ url_for('subject_patterns') }}" class="btn btn-primary">View Subject Patterns</a>
+        </div>
+
+        <div class="card" style="margin: 0;">
+            <h3>Monthly Loans by Type</h3>
+            <p>PIVOT-like analysis showing monthly loan counts by patron type</p>
+            <a href="{{ url_for('monthly_loans') }}" class="btn btn-primary">View Monthly Trends</a>
+        </div>
+
+        <div class="card" style="margin: 0;">
+            <h3>Co-Author Relationships</h3>
+            <p>Find authors who have co-authored multiple books together</p>
+            <a href="{{ url_for('co_authors') }}" class="btn btn-primary">View Co-Authors</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

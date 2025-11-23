@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Monthly Loans - Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Monthly Loans by Patron Type</h1>
+    <p>PIVOT-like Query: Cross-tabulation of loans by month and patron type</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Monthly Loan Statistics</h2>
+    </div>
+    {% if monthly_data %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Student Loans</th>
+                    <th>Faculty Loans</th>
+                    <th>Staff Loans</th>
+                    <th>Alumni Loans</th>
+                    <th>Total Loans</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in monthly_data %}
+                <tr>
+                    <td><strong>{{ m.loan_month }}</strong></td>
+                    <td><span class="badge badge-info">{{ m.student_loans }}</span></td>
+                    <td><span class="badge badge-warning">{{ m.faculty_loans }}</span></td>
+                    <td><span class="badge badge-success">{{ m.staff_loans }}</span></td>
+                    <td><span class="badge badge-danger">{{ m.alumni_loans }}</span></td>
+                    <td><strong>{{ m.total_loans }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No monthly data available</p>
+    </div>
+    {% endif %}
+    <div class="mt-2">
+        <a href="{{ url_for('analytics') }}" class="btn btn-secondary">Back to Analytics</a>
+    </div>
+</div>
+{% endblock %}
+

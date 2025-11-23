@@ -18,6 +18,7 @@
                 <li><a href="{{ url_for('loans') }}" {% if request.endpoint == 'loans' %}class="active"{% endif %}>Loans</a></li>
                 <li><a href="{{ url_for('fines') }}" {% if request.endpoint == 'fines' %}class="active"{% endif %}>Fines</a></li>
                 <li><a href="{{ url_for('statistics') }}" {% if request.endpoint == 'statistics' %}class="active"{% endif %}>Statistics</a></li>
+                <li><a href="{{ url_for('analytics') }}" {% if 'analytics' in request.endpoint %}class="active"{% endif %}>Analytics</a></li>
             </ul>
         </div>
     </nav>

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Subject Patterns - Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Patron Borrowing Patterns by Subject</h1>
+    <p>CTE Query: Analyze which subjects patrons prefer</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Subject Preferences (Patrons with 5+ loans)</h2>
+    </div>
+    {% if patterns %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Patron ID</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Subject</th>
+                    <th>Loans</th>
+                    <th>Unique Books</th>
+                    <th>% of Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in patterns %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('patron_detail', patron_id=p.patron_id) }}">
+                            {{ p.patron_id }}
+                        </a>
+                    </td>
+                    <td><strong>{{ p.patron_name }}</strong></td>
+                    <td><span class="badge badge-info">{{ p.patron_type }}</span></td>
+                    <td>{{ p.subject_name }}</td>
+                    <td>{{ p.loan_count }}</td>
+                    <td>{{ p.unique_books }}</td>
+                    <td>
+                        <span class="badge badge-warning">{{ "%.1f"|format(p.pct_of_total_loans) }}%</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No data available</p>
+    </div>
+    {% endif %}
+    <div class="mt-2">
+        <a href="{{ url_for('analytics') }}" class="btn btn-secondary">Back to Analytics</a>
+    </div>
+</div>
+{% endblock %}
+

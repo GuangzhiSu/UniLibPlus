@@ -409,5 +409,409 @@ def statistics():
     
     return render_template("statistics.html", top_books=top_books, top_patrons=top_patrons)
 
+# -----------------------------
+# Analytics - Complex Queries
+# -----------------------------
+@app.route("/analytics")
+def analytics():
+    """Main analytics page with links to complex queries"""
+    return render_template("analytics.html")
+
+# -----------------------------
+# Q12: Window Functions - Rank patrons by fines within each type
+# -----------------------------
+@app.route("/analytics/patron-ranking")
+def patron_ranking():
+    conn = get_connection()
+    rankings = []
+    
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT
+                  patron_id,
+                  first_name,
+                  last_name,
+                  patron_type,
+                  total_fines,
+                  unpaid_fines,
+                  ROW_NUMBER() OVER (PARTITION BY patron_type ORDER BY total_fines DESC) AS row_num,
+                  RANK() OVER (PARTITION BY patron_type ORDER BY total_fines DESC) AS rank_fines,
+                  DENSE_RANK() OVER (PARTITION BY patron_type ORDER BY total_fines DESC) AS dense_rank_fines
+                FROM vw_patron_fines_summary
+                JOIN Patron p USING (patron_id)
+                WHERE total_fines > 0
+                ORDER BY patron_type, total_fines DESC
+            """)
+            rankings = cur.fetchall()
+    finally:
+        conn.close()
+    
+    return render_template("analytics_patron_ranking.html", rankings=rankings)
+
+# -----------------------------
+# Q14: CTE - Patrons with loans in multiple branches
+# -----------------------------
+@app.route("/analytics/multi-branch-patrons")
+def multi_branch_patrons():
+    conn = get_connection()
+    patrons = []
+    
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                WITH PatronBranchLoans AS (
+                  SELECT DISTINCT
+                    l.patron_id,
+                    c.branch_id,
+                    br.name AS branch_name,
+                    COUNT(DISTINCT l.loan_id) AS loans_at_branch
+                  FROM Loan l
+                  JOIN Copy c ON l.copy_id = c.copy_id
+                  JOIN Branch br ON c.branch_id = br.branch_id
+                  GROUP BY l.patron_id, c.branch_id, br.name
+                ),
+                MultiBranchPatrons AS (
+                  SELECT
+                    patron_id,
+                    COUNT(DISTINCT branch_id) AS num_branches,
+                    SUM(loans_at_branch) AS total_loans
+                  FROM PatronBranchLoans
+                  GROUP BY patron_id
+                  HAVING num_branches > 1
+                )
+                SELECT
+                  p.patron_id,
+                  CONCAT(p.first_name, ' ', p.last_name) AS patron_name,
+                  mbp.num_branches,
+                  mbp.total_loans,
+                  GROUP_CONCAT(DISTINCT pbl.branch_name ORDER BY pbl.branch_name SEPARATOR ', ') AS branches_used
+                FROM MultiBranchPatrons mbp
+                JOIN Patron p ON mbp.patron_id = p.patron_id
+                JOIN PatronBranchLoans pbl ON mbp.patron_id = pbl.patron_id
+                GROUP BY p.patron_id, patron_name, mbp.num_branches, mbp.total_loans
+                ORDER BY mbp.num_branches DESC, mbp.total_loans DESC
+            """)
+            patrons = cur.fetchall()
+    finally:
+        conn.close()
+    
+    return render_template("analytics_multi_branch.html", patrons=patrons)
+
+# -----------------------------
+# Q15: Complex CASE - Book popularity categories
+# -----------------------------
+@app.route("/analytics/book-popularity")
+def book_popularity():
+    conn = get_connection()
+    categories = []
+    
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT
+                  CASE
+                    WHEN loan_count = 0 THEN 'Never Loaned'
+                    WHEN loan_count BETWEEN 1 AND 5 THEN 'Low Popularity (1-5 loans)'
+                    WHEN loan_count BETWEEN 6 AND 15 THEN 'Medium Popularity (6-15 loans)'
+                    WHEN loan_count BETWEEN 16 AND 30 THEN 'High Popularity (16-30 loans)'
+                    ELSE 'Very High Popularity (30+ loans)'
+                  END AS popularity_category,
+                  COUNT(*) AS num_books,
+                  AVG(loan_count) AS avg_loans_per_book,
+                  MIN(loan_count) AS min_loans,
+                  MAX(loan_count) AS max_loans,
+                  SUM(loan_count) AS total_loans
+                FROM (
+                  SELECT
+                    b.isbn,
+                    b.title,
+                    COUNT(l.loan_id) AS loan_count
+                  FROM Book b
+                  LEFT JOIN Copy c ON b.isbn = c.isbn
+                  LEFT JOIN Loan l ON c.copy_id = l.copy_id
+                  GROUP BY b.isbn, b.title
+                ) AS book_loans
+                GROUP BY popularity_category
+                ORDER BY 
+                  CASE popularity_category
+                    WHEN 'Never Loaned' THEN 1
+                    WHEN 'Low Popularity (1-5 loans)' THEN 2
+                    WHEN 'Medium Popularity (6-15 loans)' THEN 3
+                    WHEN 'High Popularity (16-30 loans)' THEN 4
+                    ELSE 5
+                  END
+            """)
+            categories = cur.fetchall()
+    finally:
+        conn.close()
+    
+    return render_template("analytics_book_popularity.html", categories=categories)
+
+# -----------------------------
+# Q16: EXISTS - Patrons with reservations but no loans
+# -----------------------------
+@app.route("/analytics/reservations-no-loans")
+def reservations_no_loans():
+    conn = get_connection()
+    patrons = []
+    
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT
+                  p.patron_id,
+                  CONCAT(p.first_name, ' ', p.last_name) AS patron_name,
+                  p.email,
+                  p.patron_type,
+                  COUNT(r.reservation_id) AS active_reservations
+                FROM Patron p
+                JOIN Reservation r ON p.patron_id = r.patron_id
+                WHERE r.status IN ('Active', 'Waiting')
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM Loan l
+                    WHERE l.patron_id = p.patron_id
+                  )
+                GROUP BY p.patron_id, patron_name, p.email, p.patron_type
+                ORDER BY active_reservations DESC, patron_name
+            """)
+            patrons = cur.fetchall()
+    finally:
+        conn.close()
+    
+    return render_template("analytics_reservations_no_loans.html", patrons=patrons)
+
+# -----------------------------
+# Q19: Self-Join - Repeat borrowers of same book
+# -----------------------------
+@app.route("/analytics/repeat-borrowers")
+def repeat_borrowers():
+    conn = get_connection()
+    borrowers = []
+    
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT
+                  p.patron_id,
+                  CONCAT(p.first_name, ' ', p.last_name) AS patron_name,
+                  b.isbn,
+                  b.title,
+                  COUNT(DISTINCT l1.loan_id) AS times_borrowed,
+                  MIN(l1.loan_ts) AS first_loan,
+                  MAX(l1.loan_ts) AS last_loan,
+                  DATEDIFF(MAX(l1.loan_ts), MIN(l1.loan_ts)) AS days_between_first_last
+                FROM Patron p
+                JOIN Loan l1 ON p.patron_id = l1.patron_id
+                JOIN Copy c1 ON l1.copy_id = c1.copy_id
+                JOIN Book b ON c1.isbn = b.isbn
+                GROUP BY p.patron_id, patron_name, b.isbn, b.title
+                HAVING times_borrowed > 1
+                ORDER BY times_borrowed DESC, patron_name, b.title
+            """)
+            borrowers = cur.fetchall()
+    finally:
+        conn.close()
+    
+    return render_template("analytics_repeat_borrowers.html", borrowers=borrowers)
+
+# -----------------------------
+# Q23: Fine analysis by reason
+# -----------------------------
+@app.route("/analytics/fine-analysis")
+def fine_analysis():
+    conn = get_connection()
+    fine_stats = []
+    
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT
+                  fr.code AS fine_reason_code,
+                  fr.description AS fine_reason,
+                  COUNT(f.fine_id) AS total_fines,
+                  SUM(f.amount) AS total_amount,
+                  AVG(f.amount) AS avg_amount,
+                  MIN(f.amount) AS min_amount,
+                  MAX(f.amount) AS max_amount,
+                  SUM(CASE WHEN f.status = 'Paid' THEN f.amount ELSE 0 END) AS paid_amount,
+                  SUM(CASE WHEN f.status = 'Unpaid' THEN f.amount ELSE 0 END) AS unpaid_amount,
+                  COUNT(CASE WHEN f.status = 'Paid' THEN 1 END) AS paid_count,
+                  COUNT(CASE WHEN f.status = 'Unpaid' THEN 1 END) AS unpaid_count,
+                  ROUND(
+                    100.0 * COUNT(CASE WHEN f.status = 'Paid' THEN 1 END) / COUNT(f.fine_id),
+                    2
+                  ) AS payment_rate_pct
+                FROM FineReason fr
+                LEFT JOIN Fine f ON fr.reason_id = f.reason_id
+                GROUP BY fr.reason_id, fr.code, fr.description
+                ORDER BY total_amount DESC
+            """)
+            fine_stats = cur.fetchall()
+    finally:
+        conn.close()
+    
+    return render_template("analytics_fine_analysis.html", fine_stats=fine_stats)
+
+# -----------------------------
+# Q22: Patron borrowing patterns by subject
+# -----------------------------
+@app.route("/analytics/subject-patterns")
+def subject_patterns():
+    patron_id = request.args.get('patron_id', '')
+    conn = get_connection()
+    patterns = []
+    
+    try:
+        with conn.cursor() as cur:
+            if patron_id:
+                sql = """
+                    WITH PatronSubjectLoans AS (
+                      SELECT
+                        l.patron_id,
+                        s.subject_id,
+                        s.name AS subject_name,
+                        COUNT(DISTINCT l.loan_id) AS loan_count,
+                        COUNT(DISTINCT b.isbn) AS unique_books
+                      FROM Loan l
+                      JOIN Copy c ON l.copy_id = c.copy_id
+                      JOIN Book b ON c.isbn = b.isbn
+                      JOIN BookSubject bs ON b.isbn = bs.isbn
+                      JOIN Subject s ON bs.subject_id = s.subject_id
+                      WHERE l.patron_id = %s
+                      GROUP BY l.patron_id, s.subject_id, s.name
+                    ),
+                    PatronTotalLoans AS (
+                      SELECT
+                        patron_id,
+                        SUM(loan_count) AS total_loans
+                      FROM PatronSubjectLoans
+                      GROUP BY patron_id
+                    )
+                    SELECT
+                      p.patron_id,
+                      CONCAT(p.first_name, ' ', p.last_name) AS patron_name,
+                      p.patron_type,
+                      psl.subject_name,
+                      psl.loan_count,
+                      psl.unique_books,
+                      ROUND(100.0 * psl.loan_count / ptl.total_loans, 2) AS pct_of_total_loans
+                    FROM PatronSubjectLoans psl
+                    JOIN Patron p ON psl.patron_id = p.patron_id
+                    JOIN PatronTotalLoans ptl ON p.patron_id = ptl.patron_id
+                    WHERE ptl.total_loans >= 5
+                    ORDER BY psl.loan_count DESC
+                """
+                cur.execute(sql, (patron_id,))
+            else:
+                sql = """
+                    WITH PatronSubjectLoans AS (
+                      SELECT
+                        l.patron_id,
+                        s.subject_id,
+                        s.name AS subject_name,
+                        COUNT(DISTINCT l.loan_id) AS loan_count,
+                        COUNT(DISTINCT b.isbn) AS unique_books
+                      FROM Loan l
+                      JOIN Copy c ON l.copy_id = c.copy_id
+                      JOIN Book b ON c.isbn = b.isbn
+                      JOIN BookSubject bs ON b.isbn = bs.isbn
+                      JOIN Subject s ON bs.subject_id = s.subject_id
+                      GROUP BY l.patron_id, s.subject_id, s.name
+                    ),
+                    PatronTotalLoans AS (
+                      SELECT
+                        patron_id,
+                        SUM(loan_count) AS total_loans
+                      FROM PatronSubjectLoans
+                      GROUP BY patron_id
+                    )
+                    SELECT
+                      p.patron_id,
+                      CONCAT(p.first_name, ' ', p.last_name) AS patron_name,
+                      p.patron_type,
+                      psl.subject_name,
+                      psl.loan_count,
+                      psl.unique_books,
+                      ROUND(100.0 * psl.loan_count / ptl.total_loans, 2) AS pct_of_total_loans
+                    FROM PatronSubjectLoans psl
+                    JOIN Patron p ON psl.patron_id = p.patron_id
+                    JOIN PatronTotalLoans ptl ON p.patron_id = ptl.patron_id
+                    WHERE ptl.total_loans >= 5
+                    ORDER BY p.patron_id, psl.loan_count DESC
+                    LIMIT 100
+                """
+                cur.execute(sql)
+            
+            patterns = cur.fetchall()
+    finally:
+        conn.close()
+    
+    return render_template("analytics_subject_patterns.html", patterns=patterns, patron_id=patron_id)
+
+# -----------------------------
+# Q25: Monthly loans by patron type (PIVOT-like)
+# -----------------------------
+@app.route("/analytics/monthly-loans")
+def monthly_loans():
+    conn = get_connection()
+    monthly_data = []
+    
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT
+                  DATE_FORMAT(loan_ts, '%Y-%m') AS loan_month,
+                  SUM(CASE WHEN p.patron_type = 'Student' THEN 1 ELSE 0 END) AS student_loans,
+                  SUM(CASE WHEN p.patron_type = 'Faculty' THEN 1 ELSE 0 END) AS faculty_loans,
+                  SUM(CASE WHEN p.patron_type = 'Staff' THEN 1 ELSE 0 END) AS staff_loans,
+                  SUM(CASE WHEN p.patron_type = 'Alumni' THEN 1 ELSE 0 END) AS alumni_loans,
+                  COUNT(*) AS total_loans
+                FROM Loan l
+                JOIN Patron p ON l.patron_id = p.patron_id
+                WHERE loan_ts IS NOT NULL
+                GROUP BY loan_month
+                ORDER BY loan_month DESC
+            """)
+            monthly_data = cur.fetchall()
+    finally:
+        conn.close()
+    
+    return render_template("analytics_monthly_loans.html", monthly_data=monthly_data)
+
+# -----------------------------
+# Q30: Co-author relationships
+# -----------------------------
+@app.route("/analytics/co-authors")
+def co_authors():
+    conn = get_connection()
+    coauthors = []
+    
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT
+                  a1.author_id AS author1_id,
+                  CONCAT(a1.first_name, ' ', a1.last_name) AS author1_name,
+                  a2.author_id AS author2_id,
+                  CONCAT(a2.first_name, ' ', a2.last_name) AS author2_name,
+                  COUNT(DISTINCT b.isbn) AS books_together
+                FROM Author a1
+                JOIN BookAuthor ba1 ON a1.author_id = ba1.author_id
+                JOIN BookAuthor ba2 ON ba1.isbn = ba2.isbn
+                JOIN Author a2 ON ba2.author_id = a2.author_id
+                JOIN Book b ON ba1.isbn = b.isbn
+                WHERE a1.author_id < a2.author_id
+                GROUP BY a1.author_id, author1_name, a2.author_id, author2_name
+                HAVING books_together >= 2
+                ORDER BY books_together DESC, author1_name, author2_name
+            """)
+            coauthors = cur.fetchall()
+    finally:
+        conn.close()
+    
+    return render_template("analytics_co_authors.html", coauthors=coauthors)
+
 if __name__ == "__main__":
     app.run(debug=True)

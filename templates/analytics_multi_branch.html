@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Multi-Branch Patrons - Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Multi-Branch Patrons</h1>
+    <p>CTE Query: Patrons who borrowed from multiple branches</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Patrons Using Multiple Branches</h2>
+    </div>
+    {% if patrons %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Patron ID</th>
+                    <th>Name</th>
+                    <th>Number of Branches</th>
+                    <th>Total Loans</th>
+                    <th>Branches Used</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in patrons %}
+                <tr>
+                    <td>{{ p.patron_id }}</td>
+                    <td><strong>{{ p.patron_name }}</strong></td>
+                    <td><span class="badge badge-info">{{ p.num_branches }}</span></td>
+                    <td>{{ p.total_loans }}</td>
+                    <td>{{ p.branches_used }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No patrons found using multiple branches</p>
+    </div>
+    {% endif %}
+    <div class="mt-2">
+        <a href="{{ url_for('analytics') }}" class="btn btn-secondary">Back to Analytics</a>
+    </div>
+</div>
+{% endblock %}
+

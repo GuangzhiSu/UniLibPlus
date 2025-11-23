@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Reservations Without Loans - Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Patrons with Reservations but No Loans</h1>
+    <p>EXISTS Query: Find patrons who have never borrowed but have active reservations</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>New Patrons with Active Reservations</h2>
+    </div>
+    {% if patrons %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Patron ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Type</th>
+                    <th>Active Reservations</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in patrons %}
+                <tr>
+                    <td>{{ p.patron_id }}</td>
+                    <td><strong>{{ p.patron_name }}</strong></td>
+                    <td>{{ p.email or 'N/A' }}</td>
+                    <td><span class="badge badge-info">{{ p.patron_type }}</span></td>
+                    <td><span class="badge badge-warning">{{ p.active_reservations }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No patrons found with reservations but no loans</p>
+    </div>
+    {% endif %}
+    <div class="mt-2">
+        <a href="{{ url_for('analytics') }}" class="btn btn-secondary">Back to Analytics</a>
+    </div>
+</div>
+{% endblock %}
+

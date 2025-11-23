@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UniLibPlus – Patrons</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Patrons</h1>
+
+    <h2>Existing patrons</h2>
+    <table border="1" cellpadding="6">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Type</th>
+                <th>Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in patrons %}
+            <tr>
+                <td>{{ p.patron_id }}</td>
+                <td>{{ p.first_name }} {{ p.last_name }}</td>
+                <td>{{ p.email or '' }}</td>
+                <td>{{ p.patron_type }}</td>
+                <td>{{ "%.2f"|format(p.balance) }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Add new patron</h2>
+    <form method="post">
+        <label>First name:
+            <input type="text" name="first_name" required>
+        </label><br>
+
+        <label>Last name:
+            <input type="text" name="last_name" required>
+        </label><br>
+
+        <label>Email:
+            <input type="email" name="email">
+        </label><br>
+
+        <label>Patron type:
+            <select name="patron_type" required>
+                <option value="Student">Student</option>
+                <option value="Faculty">Faculty</option>
+                <option value="Staff">Staff</option>
+                <option value="Alumni">Alumni</option>
+            </select>
+        </label><br>
+
+        <label>Address ID (optional, must exist in Address table):
+            <input type="number" name="address_id" min="1">
+        </label><br>
+
+        <button type="submit">Create patron</button>
+    </form>
+
+    <p><a href="{{ url_for('books') }}">View books</a></p>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UniLibPlus – Books</title>
+</head>
+<body>
+    <h1>Books</h1>
+    <table border="1" cellpadding="6">
+        <thead>
+            <tr>
+                <th>ISBN</th>
+                <th>Title</th>
+                <th>Year</th>
+                <th>Publisher</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for b in books %}
+            <tr>
+                <td>{{ b.isbn }}</td>
+                <td>{{ b.title }}</td>
+                <td>{{ b.pub_year }}</td>
+                <td>{{ b.publisher_name or '' }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <p><a href="{{ url_for('index') }}">Back to patrons</a></p>
+</body>
+</html>

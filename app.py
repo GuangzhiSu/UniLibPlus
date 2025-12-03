@@ -635,40 +635,81 @@ def fines():
 # -----------------------------
 @app.route("/statistics")
 def statistics():
+    subject_id = request.args.get('subject', 'overall')  # overall or 1~14
+
     conn = get_connection()
     top_books = []
     top_patrons = []
-    
+    current_subject_name = "Global Top 10"
+
     try:
-        with conn.cursor() as cur:
-            # Top 10 most popular books
+        with conn.cursor(pymysql.cursors.DictCursor) as cur:
+
+            # patron ranking
             cur.execute("""
-                SELECT b.isbn, b.title, COUNT(l.loan_id) AS times_loaned
-                FROM Book b
-                JOIN Copy c ON b.isbn = c.isbn
-                JOIN Loan l ON c.copy_id = l.copy_id
-                GROUP BY b.isbn, b.title
-                ORDER BY times_loaned DESC, b.title
-                LIMIT 10
-            """)
-            top_books = cur.fetchall()
-            
-            # Top 10 patrons by loans
-            cur.execute("""
-                SELECT p.patron_id,
-                       CONCAT(p.first_name, ' ', p.last_name) AS patron_name,
-                       COUNT(l.loan_id) AS loan_count
+                SELECT 
+                    CONCAT(p.first_name, ' ', p.last_name) AS patron_name,
+                    COUNT(l.loan_id) AS loan_count
                 FROM Patron p
                 LEFT JOIN Loan l ON p.patron_id = l.patron_id
-                GROUP BY p.patron_id, patron_name
-                ORDER BY loan_count DESC
+                GROUP BY p.patron_id, p.first_name, p.last_name
+                ORDER BY loan_count DESC, patron_name
                 LIMIT 10
             """)
             top_patrons = cur.fetchall()
+
+            # book ranking
+            if subject_id == 'overall':
+                cur.execute("""
+                    SELECT 
+                        b.isbn,
+                        b.title,
+                        COUNT(l.loan_id) AS times_loaned
+                    FROM Book b
+                    JOIN Copy c ON b.isbn = c.isbn
+                    JOIN Loan l ON c.copy_id = l.copy_id
+                    GROUP BY b.isbn, b.title
+                    ORDER BY times_loaned DESC, b.title
+                    LIMIT 10
+                """)
+
+            else:
+                sid = int(subject_id)
+                cur.execute(f"""
+                    SELECT 
+                        b.isbn,
+                        b.title,
+                        COUNT(l.loan_id) AS times_loaned
+                    FROM Book b
+                    JOIN Copy c ON b.isbn = c.isbn
+                    JOIN Loan l ON c.copy_id = l.copy_id
+                    JOIN BookSubject bs ON b.isbn = bs.isbn
+                    JOIN Subject s ON bs.subject_id = s.subject_id
+                    WHERE s.subject_id = {sid}
+                    GROUP BY b.isbn, b.title
+                    ORDER BY times_loaned DESC, b.title
+                    LIMIT 10
+                """)
+                # fetch subject
+                cur.execute("SELECT name FROM Subject WHERE subject_id = %s", (sid,))
+                row = cur.fetchone()
+                current_subject_name = (row['name'] if row else "Unknown") + " Top 10"
+
+            top_books = cur.fetchall()
+
+    except Exception as e:
+        print(f"Error: {e}")
+        flash("Failed to load statistics", "danger")
     finally:
         conn.close()
-    
-    return render_template("statistics.html", top_books=top_books, top_patrons=top_patrons)
+
+    return render_template(
+        "statistics.html",
+        top_books=top_books,
+        top_patrons=top_patrons,
+        current_subject_name=current_subject_name,
+        current_mode=subject_id
+    )
 
 # -----------------------------
 # Analytics - Complex Queries

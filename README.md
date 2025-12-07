@@ -14,6 +14,7 @@ UniLib/
 ├── create_database.sql         # Database creation script
 ├── schema_tables.sql           # Table schema definitions
 ├── constraints_indexes.sql     # Constraints and indexes
+├── triggers.sql                # Database triggers for data integrity
 ├── data.sql                    # Sample data
 ├── views.sql                   # Database views
 └── queries_examples.sql        # Example SQL queries
@@ -56,6 +57,7 @@ UniLib/
      mysql -u root -p < create_database.sql
      mysql -u root -p UniLibPlus < schema_tables.sql
      mysql -u root -p UniLibPlus < constraints_indexes.sql
+     mysql -u root -p UniLibPlus < triggers.sql
      mysql -u root -p UniLibPlus < data.sql
      mysql -u root -p UniLibPlus < views.sql
      ```
